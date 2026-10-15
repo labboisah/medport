@@ -1,0 +1,12 @@
+flowchart LR
+  P[Patient / Health Wallet] -->|Consent or limited share| MP[MediPass Identity, Consent & Record Index]
+  H1[Hospital with EHR] <--> A1[Integration Adapter]
+  L1[Laboratory / Pharmacy / Specialist] <--> A2[API or Partner Adapter]
+  H2[Facility without EHR] --> PORTAL[Secure Provider Portal]
+  A1 <--> MP
+  A2 <--> MP
+  PORTAL --> MP
+  MP --> AUDIT[Authorization & Audit Service]
+  MP --> DOCS[Private Document Storage]
+  MP -->|Authorized, scoped access| C[Verified Care Provider]
+  MP -.->|FHIR where supported| FHIR[Interoperability Layer]
