@@ -9,6 +9,7 @@ use App\Models\Consent;
 use App\Models\Patient;
 use App\Services\AccessDecision;
 use App\Services\Audit;
+use App\Services\Notifier;
 use App\Services\StaffContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -60,6 +61,7 @@ class AccessRequestController extends Controller
                 'expires_at' => now()->addHours((int) config('medipass.access_request_hours')),
             ]);
             Audit::record($request, 'access_request', 'create', 'success', $request->user(), ['patient_id' => $patient->id, 'facility_id' => $role->facility_id, 'resource_id' => $r->uuid, 'purpose' => $r->purpose]);
+            Notifier::send($patient->user_id, 'access_requested', $r->uuid);
         }
 
         return response()->json(['data' => ['status' => 'request_received']], 202);
@@ -106,6 +108,7 @@ class AccessRequestController extends Controller
             $r->update(['status' => 'approved', 'consent_id' => $consent->id, 'decided_at' => now()]);
             Audit::record($request, 'access_request', 'approve', 'success', $request->user(), ['patient_id' => $patient->id, 'facility_id' => $r->facility_id, 'resource_id' => $r->uuid, 'purpose' => $r->purpose]);
         });
+        Notifier::send($r->practitioner?->user_id, 'access_decided', $r->uuid);
 
         return response()->json(['data' => $this->present($r->fresh()->load(['facility', 'practitioner']), true)]);
     }
@@ -119,6 +122,7 @@ class AccessRequestController extends Controller
         }
         $r->update(['status' => 'denied', 'decided_at' => now()]);
         Audit::record($request, 'access_request', 'deny', 'success', $request->user(), ['patient_id' => $patient->id, 'facility_id' => $r->facility_id, 'resource_id' => $r->uuid]);
+        Notifier::send($r->practitioner?->user_id, 'access_decided', $r->uuid);
 
         return response()->json(['data' => $this->present($r->load(['facility', 'practitioner']), true)]);
     }

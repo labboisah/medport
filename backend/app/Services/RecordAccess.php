@@ -27,6 +27,11 @@ class RecordAccess
             'authorization_basis' => $decision['reason'],
         ]);
 
+        if ($decision['allowed'] && $decision['facility_id']) {
+            // At most one notice per patient and facility per hour, so reading a timeline does not flood the inbox.
+            Notifier::send($patient->user_id, 'access_event', (string) $decision['facility_id'], 60);
+        }
+
         return ['allowed' => $decision['allowed'], 'facility_id' => $decision['facility_id']];
     }
 }

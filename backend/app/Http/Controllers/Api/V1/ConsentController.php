@@ -9,6 +9,7 @@ use App\Models\Consent;
 use App\Models\Facility;
 use App\Services\AccessDecision;
 use App\Services\Audit;
+use App\Services\Notifier;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -75,6 +76,7 @@ class ConsentController extends Controller
 
             return $consent;
         });
+        Notifier::send($patient->user_id, 'sharing_changed', $consent->uuid);
 
         return response()->json(['data' => $this->present($consent->load('recipientFacility'))], 201);
     }
@@ -101,6 +103,7 @@ class ConsentController extends Controller
                 ]);
             }
         });
+        Notifier::send($patient->user_id, 'sharing_changed', 'revoke-'.$record->uuid);
 
         return response()->json(['data' => $this->present($record->fresh()->load('recipientFacility'))]);
     }

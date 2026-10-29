@@ -8,6 +8,7 @@ use App\Models\Practitioner;
 use App\Models\PractitionerRole;
 use App\Models\User;
 use App\Services\Audit;
+use App\Services\Notifier;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -46,6 +47,7 @@ class AdminController extends Controller
             ['status' => 'active'],
         );
         Audit::record($request, 'practitioner_role', 'assign', 'success', $request->user(), ['facility_id' => $facility->id, 'resource_id' => $practitioner->uuid]);
+        Notifier::send($practitioner->user_id, 'security_change', 'role-'.$practitioner->uuid.'-'.now()->timestamp);
 
         return response()->json(['data' => ['status' => 'active']], 201);
     }
@@ -54,6 +56,7 @@ class AdminController extends Controller
     {
         $role->update(['status' => 'suspended']);
         Audit::record($request, 'practitioner_role', 'suspend', 'success', $request->user(), ['facility_id' => $role->facility_id]);
+        Notifier::send($role->practitioner?->user_id, 'security_change', 'role-'.$role->id.'-'.now()->timestamp);
 
         return response()->json(['data' => ['status' => 'suspended']]);
     }

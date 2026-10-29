@@ -11,6 +11,8 @@ use App\Http\Controllers\Api\V1\HealthController;
 use App\Http\Controllers\Api\V1\IntegrationAdminController;
 use App\Http\Controllers\Api\V1\IntegrationIngestController;
 use App\Http\Controllers\Api\V1\ManualEntryController;
+use App\Http\Controllers\Api\V1\NotificationController;
+use App\Http\Controllers\Api\V1\OperationsController;
 use App\Http\Controllers\Api\V1\PatientSearchController;
 use App\Http\Controllers\Api\V1\RecordController;
 use App\Http\Controllers\Api\V1\ReferralController;
@@ -47,6 +49,13 @@ Route::prefix('v1')->group(function () {
 
     Route::middleware(['auth:sanctum', 'account:patient,practitioner', 'throttle:30,1,documents'])->get('documents/{document}/download', [DocumentController::class, 'download']);
 
+    Route::middleware(['auth:sanctum', 'account:patient,practitioner', 'throttle:60,1,notifications'])->group(function () {
+        Route::get('notifications', [NotificationController::class, 'index']);
+        Route::post('notifications/read', [NotificationController::class, 'markRead']);
+        Route::get('notifications/preferences', [NotificationController::class, 'preferences']);
+        Route::put('notifications/preferences', [NotificationController::class, 'updatePreference']);
+    });
+
     Route::middleware(['auth:sanctum', 'account:patient,practitioner', 'throttle:30,1,directory'])->get('facilities', [FacilityDirectoryController::class, 'index']);
 
     Route::prefix('patient')->middleware(['auth:sanctum', 'account:patient', 'throttle:30,1,patient-self'])->group(function () {
@@ -77,5 +86,15 @@ Route::prefix('v1')->group(function () {
         Route::get('integrations/{endpoint}/jobs', [IntegrationAdminController::class, 'jobs']);
         Route::get('integrations/{endpoint}/reconciliation', [IntegrationAdminController::class, 'reconciliation']);
         Route::post('sync-jobs/{job}/replay', [IntegrationAdminController::class, 'replay']);
+        Route::get('ops/metrics', [OperationsController::class, 'metrics']);
+        Route::get('ops/failed-jobs', [OperationsController::class, 'failedJobs']);
+        Route::post('ops/failed-jobs/{uuid}/retry', [OperationsController::class, 'retryFailed']);
+        Route::get('incidents', [OperationsController::class, 'incidents']);
+        Route::post('incidents', [OperationsController::class, 'storeIncident']);
+        Route::patch('incidents/{incident}', [OperationsController::class, 'updateIncident']);
+        Route::get('policy', [OperationsController::class, 'policy']);
+        Route::put('policy/{key}', [OperationsController::class, 'updatePolicy']);
+        Route::get('pending-verification', [OperationsController::class, 'pendingVerification']);
+        Route::get('audit', [OperationsController::class, 'audit']);
     });
 });
