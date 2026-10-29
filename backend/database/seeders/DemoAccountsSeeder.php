@@ -19,6 +19,10 @@ class DemoAccountsSeeder extends Seeder
         $this->account('patient', 'ada@demo.invalid', Patient::where('given_name', 'Ada')->where('birth_date', '1990-04-12')->first(), true);
         $this->account('practitioner', 'doctor@demo.invalid', Practitioner::where('family_name', 'Doctor')->first(), false);
         $this->account('practitioner', 'nurse@demo.invalid', Practitioner::where('family_name', 'Nurse')->first(), false);
+
+        // Platform admin for exploring the operations screens. MFA is marked enrolled only because enrolment screens are not built yet.
+        $admin = User::firstOrNew(['email' => 'admin@demo.invalid']);
+        $admin->forceFill(['name' => 'admin@demo.invalid', 'password' => self::PASSWORD, 'account_type' => 'admin', 'status' => 'active', 'mfa_enrolled_at' => now()])->save();
     }
 
     private function account(string $type, string $email, $profile, bool $patient): void

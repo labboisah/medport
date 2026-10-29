@@ -5,6 +5,7 @@ export type NavItem = { id: string; label: string; icon: string }
 
 type Props = {
   nav: NavItem[]
+  badges?: Record<string, number>
   view: string
   title: string
   subtitle?: string
@@ -20,7 +21,7 @@ const readCollapsed = () => {
   try { return localStorage.getItem(STORE) === '1' } catch { return false }
 }
 
-export function Shell({ nav, view, title, subtitle, user, onSignOut, children }: Props) {
+export function Shell({ nav, badges = {}, view, title, subtitle, user, onSignOut, children }: Props) {
   const [collapsed, setCollapsed] = useState(readCollapsed)
   const [open, setOpen] = useState(false)
   const menuButton = useRef<HTMLButtonElement>(null)
@@ -74,6 +75,7 @@ export function Shell({ nav, view, title, subtitle, user, onSignOut, children }:
                   <a href={`#/${item.id}`} aria-current={current ? 'page' : undefined} title={slim ? item.label : undefined}
                     className={`flex items-center gap-3 whitespace-nowrap rounded-lg px-3 py-2.5 font-medium ${slim ? 'md:justify-center' : ''} ${current ? 'bg-teal-700 text-white' : 'hover:bg-teal-800'}`}>
                     <Icon name={item.icon} /><span className={slim ? 'md:sr-only' : ''}>{item.label}</span>
+                    {badges[item.id] > 0 && <span className={`ml-auto rounded-full bg-amber-300 px-2 text-xs font-bold text-slate-900 ${slim ? 'md:hidden' : ''}`}>{badges[item.id]}<span className="sr-only"> unread</span></span>}
                   </a>
                 </li>
               )

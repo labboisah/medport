@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { api, type Facility } from './api'
 
 export const inputClass = 'input'
@@ -72,3 +72,34 @@ export function useView(fallback: string): string {
 }
 export const optionsFrom = <T,>(rows: T[], get: (row: T) => string | null | undefined, text: (v: string) => string = (v) => v) =>
   [...new Set(rows.map(get).filter((v): v is string => !!v))].sort().map((v) => ({ value: v, label: text(v) }))
+
+/** Loads a GET endpoint, keeps the last good data on failure, and can refresh on an interval. */
+export function useLoad<T>(path: string | null, pollMs = 0) {
+  const [data, setData] = useState<T | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [loaded, setLoaded] = useState(false)
+  const alive = useRef(true)
+
+  const reload = useCallback(async () => {
+    if (!path) return
+    try {
+      const res = await api<T>(path)
+      if (alive.current) { setData(res); setError(null); setLoaded(true) }
+    } catch (e) {
+      if (alive.current) { setError((e as Error).message); setLoaded(true) }
+    }
+  }, [path])
+
+  useEffect(() => {
+    alive.current = true
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void reload()
+    const timer = pollMs ? setInterval(() => void reload(), pollMs) : undefined
+    return () => { alive.current = false; if (timer) clearInterval(timer) }
+  }, [reload, pollMs])
+
+  return { data, error, loaded, reload }
+}
+
+export type NotificationItem = { id: string; event: string; message: string; created_at: string; read: boolean }
+export type NotificationList = { data: NotificationItem[]; meta: { unread: number } }

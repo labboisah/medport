@@ -56,7 +56,7 @@ Route::prefix('v1')->group(function () {
         Route::put('notifications/preferences', [NotificationController::class, 'updatePreference']);
     });
 
-    Route::middleware(['auth:sanctum', 'account:patient,practitioner', 'throttle:30,1,directory'])->get('facilities', [FacilityDirectoryController::class, 'index']);
+    Route::middleware(['auth:sanctum', 'account:patient,practitioner,admin', 'throttle:30,1,directory'])->get('facilities', [FacilityDirectoryController::class, 'index']);
 
     Route::prefix('patient')->middleware(['auth:sanctum', 'account:patient', 'throttle:30,1,patient-self'])->group(function () {
         Route::get('consents', [ConsentController::class, 'index']);

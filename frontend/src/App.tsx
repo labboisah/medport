@@ -1,30 +1,44 @@
-import { useState, type FormEvent } from 'react'
+import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { api, setToken } from './api'
-import { useView } from './hooks'
-import { PATIENT_NAV, PATIENT_SUBTITLES, PROVIDER_NAV, PROVIDER_SUBTITLES } from './nav'
+import { AdminWorkspace } from './AdminWorkspace'
+import { useLoad, useView, type NotificationList } from './hooks'
+import { NotificationsView } from './Notifications'
+import { ADMIN_NAV, ADMIN_SUBTITLES, PATIENT_NAV, PATIENT_SUBTITLES, PROVIDER_NAV, PROVIDER_SUBTITLES } from './nav'
 import { PatientWallet } from './PatientWallet'
 import { ProviderWorkspace } from './ProviderWorkspace'
 import { Shell } from './Shell'
 
 type Session = { accountType: string; name: string }
 
-const ROLE_LABEL: Record<string, string> = { patient: 'Patient', practitioner: 'Health worker' }
+const ROLE_LABEL: Record<string, string> = { patient: 'Patient', practitioner: 'Health worker', admin: 'Administrator' }
 
 function SignedIn({ session, onSignOut }: { session: Session; onSignOut: () => void }) {
-  const patient = session.accountType === 'patient'
-  const nav = patient ? PATIENT_NAV : PROVIDER_NAV
+  const kind = session.accountType
+  const nav = kind === 'patient' ? PATIENT_NAV : kind === 'admin' ? ADMIN_NAV : PROVIDER_NAV
+  const subtitles = kind === 'patient' ? PATIENT_SUBTITLES : kind === 'admin' ? ADMIN_SUBTITLES : PROVIDER_SUBTITLES
   const view = useView(nav[0].id)
   const current = nav.find((n) => n.id === view) ?? nav[0]
-  const subtitles = patient ? PATIENT_SUBTITLES : PROVIDER_SUBTITLES
+
+  // Admins have no personal inbox. Everyone else polls for unread counts; the message text is fixed and minimal.
+  const inbox = useLoad<NotificationList>(kind === 'admin' ? null : '/notifications', 60_000)
+  const list = kind === 'admin' ? null : inbox.data
+  const reload = useCallback(async () => { await inbox.reload() }, [inbox])
+  const unread = list?.meta?.unread ?? 0
+
+  useEffect(() => {
+    // Patients get their own title from the wallet (pending requests); others show the generic unread count.
+    if (kind !== 'patient') document.title = unread > 0 ? `(${unread}) MediPass` : 'MediPass'
+  }, [kind, unread])
 
   return (
-    <Shell nav={nav} view={current.id} title={current.label} subtitle={subtitles[current.id]}
-      user={{ name: session.name, role: ROLE_LABEL[session.accountType] ?? session.accountType }} onSignOut={onSignOut}>
-      {patient ? <PatientWallet /> : <ProviderWorkspace />}
+    <Shell nav={nav} badges={{ notifications: unread }} view={current.id} title={current.label} subtitle={subtitles[current.id]}
+      user={{ name: session.name, role: ROLE_LABEL[kind] ?? kind }} onSignOut={onSignOut}>
+      {kind === 'admin' ? <AdminWorkspace view={current.id} />
+        : current.id === 'notifications' ? <NotificationsView list={list} reload={reload} loaded={inbox.loaded} />
+        : kind === 'patient' ? <PatientWallet /> : <ProviderWorkspace />}
     </Shell>
   )
 }
-
 export default function App() {
   const [session, setSession] = useState<Session | null>(null)
   const [email, setEmail] = useState('')
@@ -52,7 +66,7 @@ export default function App() {
     window.location.hash = ''
   }
 
-  if (session && ['patient', 'practitioner'].includes(session.accountType)) {
+  if (session && ['patient', 'practitioner', 'admin'].includes(session.accountType)) {
     return <SignedIn session={session} onSignOut={signOut} />
   }
 
