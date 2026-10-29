@@ -11,7 +11,7 @@
 |---|---|---|
 | 0. Repository, scope, and decisions | Blocked | MySQL selected as the local database baseline. Approval letter drafted with source references; named owners and signed product, legal, clinical, platform, and security decisions remain unresolved. |
 | 1. Install dependencies and bootstrap development | Complete | Locked installs, local MySQL database, baseline migrations, tests, lint, frontend build, and both local HTTP endpoints verified. No patient workflows or production configuration. |
-| 2. Application foundation, environments, and CI | Complete (local evidence) | `/api/v1` health/readiness (verified 200 on local MySQL; 503 test when DB down), correlation IDs, consistent error envelope, API rate limit, structured JSON logging with sensitive-key redaction, staging/production env templates without secrets, CI workflow, module boundaries ([Backend_Modules.md](Backend_Modules.md)). Backend 8 tests pass; Pint clean. Pending outside local control: first green GitHub CI run and branch protection. |
+| 2. Application foundation, environments, and CI | Complete (branch protection pending) | `/api/v1` health/readiness (verified 200 on local MySQL; 503 test when DB down), correlation IDs, consistent error envelope, API rate limit, structured JSON logging with sensitive-key redaction, staging/production env templates without secrets, CI workflow, module boundaries ([Backend_Modules.md](Backend_Modules.md)). Backend 8 tests pass; Pint clean. GitHub CI run #2 on `4ecf878` passed (backend: composer audit, Pint, tests; frontend: npm audit, lint, test, build). Run #1 failed on advisories in symfony/mime and undici; fixed by dependency updates. Remaining: enable branch protection with required CI checks (repository admin action in GitHub settings). |
 | 3. Domain model, migrations, and data quality | Not started | |
 | 4. Authentication, patient identity, facility and provider registry | Not started | |
 | 5. Authorization, consent, and audit | Not started | Must pass before exposing clinical records. |
@@ -72,7 +72,7 @@ The MySQL server and both development servers are running in local terminals. No
 
 ## Next actions
 
-1. Push to GitHub, confirm CI is green, enable branch protection (completes the Phase 2 exit gate).
+1. Enable branch protection on `main` requiring the CI checks and review (GitHub settings; cannot be done from this environment). Note: local Vitest can time out starting workers on this slow machine; it passes on retry and in CI.
 2. Phase 3 needs the clinical safety owner's approved minimum dataset, identifier/matching rules and entity scope (see `approvals/04`). Do not invent these. Once supplied (or the drafts' proposed minimum dataset is explicitly accepted as the working default), implement migrations for patient identity, facility/practitioner registry, consent, access grants and audit events with synthetic seeders.
 3. Obtain named owner signatures on the [approval drafts](approvals/) and the gate decision before any real data.
 ## Session handoff template
