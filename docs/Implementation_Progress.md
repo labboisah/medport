@@ -1,7 +1,7 @@
 # MediPass Implementation Progress
 
 **Updated:** 2026-10-29
-**Current phase:** Phase 3 — Domain model, migrations, and data quality (NOT STARTED: blocked on clinical decisions)
+**Current phase:** Phase 3 — Domain model, migrations, and data quality (In progress, user-directed working default)
 **Current status:** Phase 0 owner signatures are still pending (drafts in `docs/approvals/` are unsigned). At the user's direction, work proceeds under the drafts' interim gate position: synthetic-data foundations, CI and baseline security only. No real patient data, patient workflows, integrations, or production deployment.
 **Repository state:** Laravel and React/Vite starter applications are present with locked dependencies. No MediPass patient workflows, partner integrations, or production configuration are implemented.
 
@@ -12,7 +12,7 @@
 | 0. Repository, scope, and decisions | Blocked | MySQL selected as the local database baseline. Approval letter drafted with source references; named owners and signed product, legal, clinical, platform, and security decisions remain unresolved. |
 | 1. Install dependencies and bootstrap development | Complete | Locked installs, local MySQL database, baseline migrations, tests, lint, frontend build, and both local HTTP endpoints verified. No patient workflows or production configuration. |
 | 2. Application foundation, environments, and CI | Complete (branch protection pending) | `/api/v1` health/readiness (verified 200 on local MySQL; 503 test when DB down), correlation IDs, consistent error envelope, API rate limit, structured JSON logging with sensitive-key redaction, staging/production env templates without secrets, CI workflow, module boundaries ([Backend_Modules.md](Backend_Modules.md)). Backend 8 tests pass; Pint clean. GitHub CI run #2 on `4ecf878` passed (backend: composer audit, Pint, tests; frontend: npm audit, lint, test, build). Run #1 failed on advisories in symfony/mime and undici; fixed by dependency updates. Remaining: enable branch protection with required CI checks (repository admin action in GitHub settings). |
-| 3. Domain model, migrations, and data quality | Not started | |
+| 3. Domain model, migrations, and data quality | In progress (partial) | Identity, registry, consent, access-grant and audit schema with models and synthetic seeder; 17 backend tests pass; verified migrate/seed/rollback on MySQL. Clinical record tables deferred to Phase 6. See [Domain_Model_Notes.md](Domain_Model_Notes.md). Uses the draft minimum dataset as an unapproved working default. |
 | 4. Authentication, patient identity, facility and provider registry | Not started | |
 | 5. Authorization, consent, and audit | Not started | Must pass before exposing clinical records. |
 | 6. Clinical records, timeline, and secure document handling | Not started | |
@@ -72,9 +72,9 @@ The MySQL server and both development servers are running in local terminals. No
 
 ## Next actions
 
-1. Enable branch protection on `main` requiring the CI checks and review (GitHub settings; cannot be done from this environment). Note: local Vitest can time out starting workers on this slow machine; it passes on retry and in CI.
-2. Phase 3 needs the clinical safety owner's approved minimum dataset, identifier/matching rules and entity scope (see `approvals/04`). Do not invent these. Once supplied (or the drafts' proposed minimum dataset is explicitly accepted as the working default), implement migrations for patient identity, facility/practitioner registry, consent, access grants and audit events with synthetic seeders.
-3. Obtain named owner signatures on the [approval drafts](approvals/) and the gate decision before any real data.
+1. Push and confirm CI is green for the Phase 3 commit; enable branch protection on `main` (GitHub settings, admin action).
+2. Finish Phase 3 exit gate: decide whether clinical-record tables (with provenance/correction history) are built now or in Phase 6; add match-scoring policy once the clinical owner supplies thresholds.
+3. Then Phase 4 (authentication, patient identity, registry workflows), noting the clinical owner's sign-off is still required for real data.
 ## Session handoff template
 
 At each stop, update this file with the current phase/status, files changed, exact commands and test outcomes, unresolved decisions and owners, and one concrete next action. Never store credentials, tokens, or patient data here.
