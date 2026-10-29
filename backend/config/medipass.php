@@ -9,4 +9,8 @@ return [
     'document_max_bytes' => (int) env('MEDIPASS_DOCUMENT_MAX_BYTES', 10 * 1024 * 1024),
     // An unanswered provider access request lapses after this many hours.
     'access_request_hours' => (int) env('MEDIPASS_ACCESS_REQUEST_HOURS', 72),
+    // Partner ingest: bounded retries with exponential backoff, then dead-letter until an admin replays.
+    'integration_max_attempts' => (int) env('MEDIPASS_INTEGRATION_MAX_ATTEMPTS', 5),
+    'integration_backoff_seconds' => (int) env('MEDIPASS_INTEGRATION_BACKOFF_SECONDS', 30),
+    'integration_max_items' => (int) env('MEDIPASS_INTEGRATION_MAX_ITEMS', 100),
 ];

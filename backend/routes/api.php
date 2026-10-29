@@ -8,6 +8,8 @@ use App\Http\Controllers\Api\V1\ConsentController;
 use App\Http\Controllers\Api\V1\DocumentController;
 use App\Http\Controllers\Api\V1\FacilityDirectoryController;
 use App\Http\Controllers\Api\V1\HealthController;
+use App\Http\Controllers\Api\V1\IntegrationAdminController;
+use App\Http\Controllers\Api\V1\IntegrationIngestController;
 use App\Http\Controllers\Api\V1\ManualEntryController;
 use App\Http\Controllers\Api\V1\PatientSearchController;
 use App\Http\Controllers\Api\V1\RecordController;
@@ -30,6 +32,7 @@ Route::prefix('v1')->group(function () {
 
     Route::middleware(['auth:sanctum', 'account:practitioner', 'throttle:30,1,patient-search'])->group(function () {
         Route::post('patients/search', PatientSearchController::class);
+        Route::get('provider/patients/{patient}/fhir', [RecordController::class, 'providerFhir']);
         Route::get('provider/patients/{patient}/timeline', [RecordController::class, 'providerTimeline']);
         Route::post('provider/patients/{patient}/documents', [DocumentController::class, 'upload']);
         Route::post('provider/access-requests', [AccessRequestController::class, 'store']);
@@ -56,8 +59,11 @@ Route::prefix('v1')->group(function () {
         Route::post('access-requests/{accessRequest}/approve', [AccessRequestController::class, 'approve']);
         Route::post('access-requests/{accessRequest}/deny', [AccessRequestController::class, 'deny']);
         Route::get('timeline', [RecordController::class, 'patientTimeline']);
+        Route::get('fhir', [RecordController::class, 'patientFhir']);
         Route::post('records/{category}/{record}/corrections', [RecordController::class, 'requestCorrection']);
     });
+
+    Route::middleware(['integration', 'throttle:60,1,integration'])->post('integrations/records', IntegrationIngestController::class);
 
     Route::prefix('admin')->middleware(['auth:sanctum', 'account:admin'])->group(function () {
         Route::post('facilities/{facility}/verify', [AdminController::class, 'verifyFacility']);
@@ -65,5 +71,11 @@ Route::prefix('v1')->group(function () {
         Route::post('practitioners/{practitioner}/roles', [AdminController::class, 'assignRole']);
         Route::post('practitioner-roles/{role}/suspend', [AdminController::class, 'suspendRole']);
         Route::post('users/{user}/disable', [AdminController::class, 'disableUser']);
+        Route::get('integrations', [IntegrationAdminController::class, 'index']);
+        Route::post('integrations', [IntegrationAdminController::class, 'store']);
+        Route::post('integrations/{endpoint}/disable', [IntegrationAdminController::class, 'disable']);
+        Route::get('integrations/{endpoint}/jobs', [IntegrationAdminController::class, 'jobs']);
+        Route::get('integrations/{endpoint}/reconciliation', [IntegrationAdminController::class, 'reconciliation']);
+        Route::post('sync-jobs/{job}/replay', [IntegrationAdminController::class, 'replay']);
     });
 });

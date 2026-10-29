@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Integrations\FhirMapper;
 use App\Models\Patient;
 use App\Models\RecordCorrection;
 use App\Services\Audit;
@@ -44,6 +45,41 @@ class RecordController extends Controller
         }
 
         return $this->respond($allowed, $record);
+    }
+
+    private function fhir(array $categories, Patient $patient): JsonResponse
+    {
+        $items = RecordPresenter::timeline($patient, $categories);
+
+        return response()->json(FhirMapper::bundle($patient, $items), 200, ['Content-Type' => 'application/fhir+json']);
+    }
+
+    /** FHIR R4 export, gated per category exactly like the timeline. */
+    public function providerFhir(Request $request, string $patient): JsonResponse
+    {
+        $record = Patient::where('uuid', $patient)->first();
+        $allowed = [];
+        foreach (array_keys(RecordPresenter::MODELS) as $category) {
+            if ($record && RecordAccess::authorize($request, $record, $category)['allowed']) {
+                $allowed[] = $category;
+            }
+        }
+        if (! $allowed) {
+            throw new HttpException(403, 'Forbidden.');
+        }
+
+        return $this->fhir($allowed, $record);
+    }
+
+    public function patientFhir(Request $request): JsonResponse
+    {
+        $patient = $request->user()->patient ?? throw new HttpException(403, 'Forbidden.');
+        $categories = array_keys(RecordPresenter::MODELS);
+        foreach ($categories as $category) {
+            RecordAccess::authorize($request, $patient, $category);
+        }
+
+        return $this->fhir($categories, $patient);
     }
 
     public function patientTimeline(Request $request): JsonResponse

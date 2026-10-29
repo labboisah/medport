@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\AssignCorrelationId;
+use App\Http\Middleware\AuthenticateIntegration;
 use App\Http\Middleware\EnsureAccount;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -22,7 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->api(prepend: [AssignCorrelationId::class]);
         $middleware->throttleApi('120,1');
-        $middleware->alias(['account' => EnsureAccount::class]);
+        $middleware->alias(['account' => EnsureAccount::class, 'integration' => AuthenticateIntegration::class]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
