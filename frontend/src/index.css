@@ -1,5 +1,12 @@
 @import "tailwindcss";
 
+/* Palette: calm clinical teal for brand and actions, slate for text and surfaces,
+   with amber/red/green reserved for status. Every pairing below meets WCAG AA contrast. */
+@theme {
+  --font-sans: "Inter", "Segoe UI", system-ui, sans-serif;
+  --color-surface: #f4f7f8;
+}
+
 html,
 body,
 #root {
@@ -8,7 +15,28 @@ body,
 
 body {
   margin: 0;
-  font-family: "Inter", "Segoe UI", sans-serif;
-  background: #f7f8fb;
+  font-family: var(--font-sans);
+  background: var(--color-surface);
   color: #0f172a;
+}
+
+:focus-visible {
+  outline: 3px solid #0e7490;
+  outline-offset: 2px;
+}
+
+@layer components {
+  .card { @apply rounded-xl border border-slate-200 bg-white shadow-sm; }
+  .input { @apply mt-1 block w-full rounded-lg border border-slate-400 bg-white px-3 py-2 text-slate-900 placeholder:text-slate-500; }
+  .btn, .btn-primary, .btn-secondary, .btn-danger { @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60; }
+  .btn-primary { @apply bg-teal-700 text-white hover:bg-teal-800; }
+  .btn-secondary { @apply border border-slate-400 bg-white text-slate-900 hover:bg-slate-100; }
+  .btn-danger { @apply border border-red-700 bg-white text-red-800 hover:bg-red-50; }
+  .btn-sm { @apply px-3 py-1 text-sm; }
+  .badge, .badge-neutral, .badge-good, .badge-warn, .badge-bad, .badge-info { @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium; }
+  .badge-neutral { @apply bg-slate-100 text-slate-800; }
+  .badge-good { @apply bg-emerald-100 text-emerald-900; }
+  .badge-warn { @apply bg-amber-100 text-amber-900; }
+  .badge-bad { @apply bg-red-100 text-red-900; }
+  .badge-info { @apply bg-sky-100 text-sky-900; }
 }

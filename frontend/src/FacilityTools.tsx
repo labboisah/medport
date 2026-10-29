@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { api, ApiError } from './api'
-import { Messages, Section } from './ui'
-import { inputClass, label, primaryButton, secondaryButton, useAction, useFacilities, useOnline } from './hooks'
+import { DataTable, type Column } from './DataTable'
+import { Badge, Messages } from './ui'
+import { inputClass, label, primaryButton, secondaryButton, useAction, useFacilities, useOnline, optionsFrom } from './hooks'
 
 const nowLocal = () => new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16)
 
@@ -129,7 +130,9 @@ export function UploadForm({ patientId }: { patientId: string }) {
   )
 }
 
-type Incoming = { id: string; from_facility: string | null; reason: string; status: string; outcome: string | null; patient: { given_name: string; family_name: string } }
+type Incoming = { id: string; from_facility: string | null; reason: string; status: string; outcome: string | null; created_at: string; patient: { given_name: string; family_name: string } }
+
+const tone = (s: string) => (s === 'completed' || s === 'accepted' ? 'good' : s === 'declined' ? 'bad' : 'warn')
 
 export function IncomingReferrals() {
   const online = useOnline()
@@ -158,34 +161,46 @@ export function IncomingReferrals() {
     return `Referral ${status}.`
   })
 
+  const columns: Column<Incoming>[] = [
+    { key: 'patient', header: 'Patient', cell: (r) => <span className="font-medium">{r.patient.given_name} {r.patient.family_name}</span>, sort: (r) => r.patient.family_name },
+    { key: 'from', header: 'From', cell: (r) => r.from_facility ?? 'Unknown facility', sort: (r) => r.from_facility ?? '' },
+    { key: 'reason', header: 'Reason', cell: (r) => r.reason },
+    { key: 'status', header: 'Status', cell: (r) => <Badge tone={tone(r.status)}>{label(r.status)}</Badge>, sort: (r) => r.status },
+    {
+      key: 'action', header: 'Action', cell: (r) => r.status === 'requested' ? (
+        <span className="flex gap-2">
+          <button className="btn-primary btn-sm" disabled={!online || act.busy} onClick={() => decide(r.id, 'accepted')}>Accept</button>
+          <button className="btn-secondary btn-sm" disabled={!online || act.busy} onClick={() => decide(r.id, 'declined')}>Decline</button>
+        </span>
+      ) : null,
+    },
+  ]
+
   return (
-    <Section id="incoming-h" title="Referrals sent to your facility">
-      {loadError && <p role="alert" className="rounded bg-red-50 p-3 text-red-900">{loadError}</p>}
+    <div className="space-y-3">
+      {loadError && <p role="alert" className="rounded-lg border border-red-300 bg-red-50 p-3 text-red-900">{loadError}</p>}
       <Messages error={act.error} message={act.message} />
-      {rows.length === 0 ? <p className="text-slate-700">No referrals are waiting.</p> : (
-        <ul className="space-y-3">
-          {rows.map((r) => (
-            <li key={r.id} className="rounded border border-slate-300 bg-white p-4">
-              <p><strong>{r.patient.given_name} {r.patient.family_name}</strong> from {r.from_facility ?? 'unknown facility'}: {r.reason}</p>
-              <p className="text-sm">Status: <strong>{r.status}</strong>{r.outcome ? ` — outcome: ${r.outcome}` : ''}</p>
-              {r.status === 'requested' && (
-                <div className="mt-2 flex gap-3">
-                  <button className={primaryButton} disabled={!online || act.busy} onClick={() => decide(r.id, 'accepted')}>Accept</button>
-                  <button className={secondaryButton} disabled={!online || act.busy} onClick={() => decide(r.id, 'declined')}>Decline</button>
-                </div>
-              )}
-              {r.status === 'accepted' && (
-                <div className="mt-2 space-y-2">
-                  <label className="block">Outcome to share with the patient
-                    <textarea className={inputClass} value={outcomes[r.id] ?? ''} onChange={(e) => setOutcomes({ ...outcomes, [r.id]: e.target.value })} maxLength={2000} />
-                  </label>
-                  <button className={primaryButton} disabled={!online || act.busy || !(outcomes[r.id] ?? '').trim()} onClick={() => decide(r.id, 'completed', outcomes[r.id])}>Mark completed</button>
-                </div>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
-    </Section>
+      <DataTable caption="Incoming referrals" rows={rows} rowKey={(r) => r.id} columns={columns}
+        searchText={(r) => `${r.patient.given_name} ${r.patient.family_name} ${r.from_facility ?? ''} ${r.reason}`}
+        filters={[
+          { id: 'status', label: 'Status', options: optionsFrom(rows, (r) => r.status, label), test: (r, v) => r.status === v },
+          { id: 'from', label: 'From', options: optionsFrom(rows, (r) => r.from_facility), test: (r, v) => r.from_facility === v },
+        ]}
+        empty="No referrals are waiting."
+        detail={(r) => (
+          <div className="space-y-2">
+            <p><strong>Reason:</strong> {r.reason}</p>
+            {r.outcome && <p><strong>Outcome:</strong> {r.outcome}</p>}
+            {r.status === 'accepted' && (
+              <>
+                <label className="block max-w-xl font-medium">Outcome to share with the patient
+                  <textarea className="input" value={outcomes[r.id] ?? ''} onChange={(e) => setOutcomes({ ...outcomes, [r.id]: e.target.value })} maxLength={2000} />
+                </label>
+                <button className="btn-primary" disabled={!online || act.busy || !(outcomes[r.id] ?? '').trim()} onClick={() => decide(r.id, 'completed', outcomes[r.id])}>Mark completed</button>
+              </>
+            )}
+          </div>
+        )} />
+    </div>
   )
 }

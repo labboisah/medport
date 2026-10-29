@@ -63,10 +63,12 @@ test('patient can approve a request using only the keyboard, and the screen pass
 test('patient screen keeps the last data and warns when the connection drops', async ({ page, context }) => {
   await stubApi(page, 'patient')
   await signIn(page)
+  await page.getByRole('link', { name: 'My records' }).click()
   await expect(page.getByText('Penicillin')).toBeVisible()
   await context.setOffline(true)
   await expect(page.getByText(/You are offline\./)).toBeVisible()
   await expect(page.getByText('Penicillin')).toBeVisible()
+  await page.getByRole('link', { name: 'Overview' }).click()
   await expect(page.getByRole('button', { name: 'Allow access' })).toBeDisabled()
 })
 

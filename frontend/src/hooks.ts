@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
 import { api, type Facility } from './api'
 
-export const inputClass = 'mt-1 block w-full rounded border border-slate-500 p-2'
-export const primaryButton = 'rounded bg-slate-900 px-4 py-2 text-white disabled:opacity-60'
-export const secondaryButton = 'rounded border border-slate-700 px-4 py-2 disabled:opacity-60'
+export const inputClass = 'input'
+export const primaryButton = 'btn-primary'
+export const secondaryButton = 'btn-secondary'
 
 export const CATEGORIES = ['encounters', 'conditions', 'medications', 'allergies', 'observations', 'diagnostic_reports', 'documents', 'referrals']
 
@@ -57,3 +57,18 @@ export function useAction() {
   return { error, message, busy, run }
 }
 
+
+const readView = (fallback: string) => window.location.hash.replace(/^#\//, '') || fallback
+
+/** Hash-based view selection, so the browser back button and bookmarks work without a router dependency. */
+export function useView(fallback: string): string {
+  const [view, setView] = useState(() => readView(fallback))
+  useEffect(() => {
+    const on = () => setView(readView(fallback))
+    window.addEventListener('hashchange', on)
+    return () => window.removeEventListener('hashchange', on)
+  }, [fallback])
+  return view
+}
+export const optionsFrom = <T,>(rows: T[], get: (row: T) => string | null | undefined, text: (v: string) => string = (v) => v) =>
+  [...new Set(rows.map(get).filter((v): v is string => !!v))].sort().map((v) => ({ value: v, label: text(v) }))

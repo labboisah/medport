@@ -39,6 +39,7 @@ const patientRoutes: Record<string, Handler> = {
 }
 
 afterEach(() => {
+  window.location.hash = ''
   vi.restoreAllMocks()
   Object.defineProperty(navigator, 'onLine', { value: true, configurable: true })
 })
@@ -75,14 +76,20 @@ describe('patient screens', () => {
       'POST /patient/consents': () => ({ status: 201, json: { data: {} } }),
       'POST /patient/records/documents/doc-1/corrections': () => ({ status: 201, json: { data: {} } }),
     })
+    window.location.hash = '#/sharing'
     render(<PatientWallet />)
 
-    await userEvent.selectOptions(await screen.findByLabelText('Facility'), 'City Clinic')
+    const shareForm = await screen.findByRole('form', { name: 'Share your records' })
+    await userEvent.selectOptions(within(shareForm).getByLabelText('Facility'), 'City Clinic')
     await userEvent.click(screen.getByLabelText('allergies'))
     await userEvent.click(screen.getByRole('button', { name: 'Start sharing' }))
     await screen.findByText(/Sharing started/)
     expect(calls.find((c) => c.key === 'POST /patient/consents')?.body).toEqual({ facility_id: 'fac-1', categories: ['allergies'], duration_hours: 24 })
 
+    act(() => {
+      window.location.hash = '#/records'
+    })
+    await userEvent.click(await screen.findByRole('button', { name: 'Details' }))
     await userEvent.click(screen.getByRole('button', { name: 'Report a problem with this record' }))
     await userEvent.type(screen.getByLabelText('Explain in your own words'), 'This is not mine')
     await userEvent.click(screen.getByRole('button', { name: 'Send' }))
@@ -102,7 +109,7 @@ describe('patient screens', () => {
 
     expect(await screen.findByText(/You are offline\./)).toHaveTextContent('Showing what was last loaded')
     expect(screen.getByRole('button', { name: 'Allow access' })).toBeDisabled()
-    expect(screen.getAllByText('Discharge note', { exact: false }).length).toBeGreaterThan(0)
+    expect(screen.getByText(/Dr Ada/)).toBeInTheDocument()
   })
 })
 
@@ -169,6 +176,9 @@ describe('facility screens', () => {
     await within(upload).findByText(/Uploaded/)
     expect(calls.find((c) => c.key.endsWith('/documents'))?.body).toBeInstanceOf(FormData)
 
+    act(() => {
+      window.location.hash = '#/referrals'
+    })
     await userEvent.click(await screen.findByRole('button', { name: 'Accept' }))
     await waitFor(() => expect(calls.find((c) => c.key.includes('/decision'))?.body).toEqual({ status: 'accepted' }))
     expect((await axe(container)).violations).toEqual([])
