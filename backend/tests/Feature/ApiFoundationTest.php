@@ -31,6 +31,19 @@ class ApiFoundationTest extends TestCase
         $this->assertContains($response->status(), [200, 503]);
     }
 
+    public function test_readiness_returns_503_when_database_is_unavailable(): void
+    {
+        config([
+            'database.connections.broken' => ['driver' => 'sqlite', 'database' => '/nonexistent-dir/x.sqlite'],
+            'database.default' => 'broken',
+        ]);
+
+        $this->getJson('/api/v1/health/ready')
+            ->assertStatus(503)
+            ->assertJsonPath('status', 'degraded')
+            ->assertJsonPath('checks.database', 'fail');
+    }
+
     public function test_unknown_api_route_uses_consistent_error_shape(): void
     {
         $this->getJson('/api/v1/nope')

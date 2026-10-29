@@ -22,3 +22,4 @@ The backend is a Laravel modular monolith. Modules are namespaced areas under `b
 - Errors use `{ "error": { "code", "message", "correlation_id", "fields"? } }`; 5xx never expose exception details.
 - Default rate limit: 120 requests/minute on API routes; tighten per endpoint as sensitive endpoints are added.
 - Non-production environments use synthetic data only; credentials and storage are separate per environment and never committed.
+- Logging: JSON, with sensitive keys (passwords, tokens, contact details, clinical fields) masked by `App\Logging\StructuredRedactedLogging`. Use `composer dev` for the local startup command. Environment templates: `backend/.env.example` (local), `.env.staging.example`, `.env.production.example` (no secrets).
