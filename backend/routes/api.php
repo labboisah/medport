@@ -1,7 +1,9 @@
 <?php
 
+use App\Http\Controllers\Api\V1\AccessController;
 use App\Http\Controllers\Api\V1\AdminController;
 use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\ConsentController;
 use App\Http\Controllers\Api\V1\HealthController;
 use App\Http\Controllers\Api\V1\PatientSearchController;
 use Illuminate\Support\Facades\Route;
@@ -22,6 +24,16 @@ Route::prefix('v1')->group(function () {
 
     Route::middleware(['auth:sanctum', 'account:practitioner', 'throttle:30,1,patient-search'])->group(function () {
         Route::post('patients/search', PatientSearchController::class);
+        Route::post('access/check', [AccessController::class, 'check']);
+        Route::post('share-tokens/resolve', [AccessController::class, 'resolveToken']);
+    });
+
+    Route::prefix('patient')->middleware(['auth:sanctum', 'account:patient', 'throttle:30,1,patient-self'])->group(function () {
+        Route::get('consents', [ConsentController::class, 'index']);
+        Route::post('consents', [ConsentController::class, 'store']);
+        Route::post('consents/{consent}/revoke', [ConsentController::class, 'revoke']);
+        Route::get('access-history', [ConsentController::class, 'history']);
+        Route::post('share-tokens', [AccessController::class, 'createToken']);
     });
 
     Route::prefix('admin')->middleware(['auth:sanctum', 'account:admin'])->group(function () {
