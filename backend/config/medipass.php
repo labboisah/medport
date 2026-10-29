@@ -7,4 +7,6 @@ return [
     // Placeholder freshness threshold; the real value is a clinical-owner policy.
     'stale_after_days' => (int) env('MEDIPASS_STALE_AFTER_DAYS', 365),
     'document_max_bytes' => (int) env('MEDIPASS_DOCUMENT_MAX_BYTES', 10 * 1024 * 1024),
+    // An unanswered provider access request lapses after this many hours.
+    'access_request_hours' => (int) env('MEDIPASS_ACCESS_REQUEST_HOURS', 72),
 ];

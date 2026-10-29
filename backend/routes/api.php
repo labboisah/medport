@@ -1,13 +1,16 @@
 <?php
 
 use App\Http\Controllers\Api\V1\AccessController;
+use App\Http\Controllers\Api\V1\AccessRequestController;
 use App\Http\Controllers\Api\V1\AdminController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\ConsentController;
 use App\Http\Controllers\Api\V1\DocumentController;
 use App\Http\Controllers\Api\V1\HealthController;
+use App\Http\Controllers\Api\V1\ManualEntryController;
 use App\Http\Controllers\Api\V1\PatientSearchController;
 use App\Http\Controllers\Api\V1\RecordController;
+use App\Http\Controllers\Api\V1\ReferralController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
@@ -28,6 +31,12 @@ Route::prefix('v1')->group(function () {
         Route::post('patients/search', PatientSearchController::class);
         Route::get('provider/patients/{patient}/timeline', [RecordController::class, 'providerTimeline']);
         Route::post('provider/patients/{patient}/documents', [DocumentController::class, 'upload']);
+        Route::post('provider/access-requests', [AccessRequestController::class, 'store']);
+        Route::get('provider/access-requests', [AccessRequestController::class, 'mine']);
+        Route::post('provider/patients/{patient}/encounters', [ManualEntryController::class, 'encounter']);
+        Route::post('provider/patients/{patient}/referrals', [ReferralController::class, 'store']);
+        Route::get('provider/referrals/incoming', [ReferralController::class, 'incoming']);
+        Route::post('provider/referrals/{referral}/decision', [ReferralController::class, 'decide']);
         Route::post('access/check', [AccessController::class, 'check']);
         Route::post('share-tokens/resolve', [AccessController::class, 'resolveToken']);
     });
@@ -40,6 +49,9 @@ Route::prefix('v1')->group(function () {
         Route::post('consents/{consent}/revoke', [ConsentController::class, 'revoke']);
         Route::get('access-history', [ConsentController::class, 'history']);
         Route::post('share-tokens', [AccessController::class, 'createToken']);
+        Route::get('access-requests', [AccessRequestController::class, 'index']);
+        Route::post('access-requests/{accessRequest}/approve', [AccessRequestController::class, 'approve']);
+        Route::post('access-requests/{accessRequest}/deny', [AccessRequestController::class, 'deny']);
         Route::get('timeline', [RecordController::class, 'patientTimeline']);
         Route::post('records/{category}/{record}/corrections', [RecordController::class, 'requestCorrection']);
     });

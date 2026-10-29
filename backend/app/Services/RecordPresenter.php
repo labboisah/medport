@@ -10,6 +10,7 @@ use App\Models\Encounter;
 use App\Models\Medication;
 use App\Models\Observation;
 use App\Models\Patient;
+use App\Models\Referral;
 use Illuminate\Database\Eloquent\Model;
 
 /** Maps access categories to record models and presents each item with provenance and freshness. */
@@ -22,6 +23,7 @@ class RecordPresenter
         'allergies' => ['allergy', Allergy::class, ['reaction_text', 'severity', 'allergy_status']],
         'observations' => ['observation', Observation::class, ['category', 'value_number', 'value_text', 'unit', 'reference_low', 'reference_high', 'interpretation']],
         'diagnostic_reports' => ['diagnostic_report', DiagnosticReport::class, ['report_type', 'conclusion', 'report_status']],
+        'referrals' => ['referral', Referral::class, ['reason', 'referral_status', 'outcome_text', 'decided_at']],
         'documents' => ['document_reference', DocumentReference::class, ['document_type', 'title', 'mime_type', 'size_bytes', 'scan_status']],
     ];
 
