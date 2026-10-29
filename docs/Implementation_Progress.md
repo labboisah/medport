@@ -1,8 +1,8 @@
 # MediPass Implementation Progress
 
-**Updated:** 2026-10-21
-**Current phase:** Phase 1 — Install dependencies and bootstrap development
-**Current status:** Complete for local scaffold only; Phase 0 approvals remain blocked.
+**Updated:** 2026-10-29
+**Current phase:** Phase 2 — Application foundation, environments, and CI (In progress, user-directed)
+**Current status:** Phase 0 owner signatures are still pending (drafts in `docs/approvals/` are unsigned). At the user's direction, work proceeds under the drafts' interim gate position: synthetic-data foundations, CI and baseline security only. No real patient data, patient workflows, integrations, or production deployment.
 **Repository state:** Laravel and React/Vite starter applications are present with locked dependencies. No MediPass patient workflows, partner integrations, or production configuration are implemented.
 
 ## Phase status
@@ -11,7 +11,7 @@
 |---|---|---|
 | 0. Repository, scope, and decisions | Blocked | MySQL selected as the local database baseline. Approval letter drafted with source references; named owners and signed product, legal, clinical, platform, and security decisions remain unresolved. |
 | 1. Install dependencies and bootstrap development | Complete | Locked installs, local MySQL database, baseline migrations, tests, lint, frontend build, and both local HTTP endpoints verified. No patient workflows or production configuration. |
-| 2. Application foundation, environments, and CI | Not started | |
+| 2. Application foundation, environments, and CI | In progress | Done: `/api/v1` health/readiness, correlation IDs, consistent error envelope, API rate limit, CI workflow, module doc ([Backend_Modules.md](Backend_Modules.md)). Remaining: structured log redaction, per-environment config templates, reproducible startup command, branch protection, dependency audits verified in CI. |
 | 3. Domain model, migrations, and data quality | Not started | |
 | 4. Authentication, patient identity, facility and provider registry | Not started | |
 | 5. Authorization, consent, and audit | Not started | Must pass before exposing clinical records. |
@@ -72,7 +72,8 @@ The MySQL server and both development servers are running in local terminals. No
 
 ## Next actions
 
-1. Obtain named owner reviews and signatures on [the Phase 0 approval draft](Phase_0_Approval_Letter_Draft.md), resolve any conditions, and have the designated gate owner record the decision before Phase 2.
+1. Finish Phase 2: structured logging without sensitive payloads, environment templates (dev/test/staging/production), one-command local startup, and confirm CI is green on GitHub; enable branch protection.
+2. In parallel, obtain named owner reviews and signatures on the [approval drafts](approvals/) and have the gate owner record the decision before Phase 3+ work touches domain data.
 
 ## Session handoff template
 
