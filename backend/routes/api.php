@@ -4,8 +4,10 @@ use App\Http\Controllers\Api\V1\AccessController;
 use App\Http\Controllers\Api\V1\AdminController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\ConsentController;
+use App\Http\Controllers\Api\V1\DocumentController;
 use App\Http\Controllers\Api\V1\HealthController;
 use App\Http\Controllers\Api\V1\PatientSearchController;
+use App\Http\Controllers\Api\V1\RecordController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
@@ -24,9 +26,13 @@ Route::prefix('v1')->group(function () {
 
     Route::middleware(['auth:sanctum', 'account:practitioner', 'throttle:30,1,patient-search'])->group(function () {
         Route::post('patients/search', PatientSearchController::class);
+        Route::get('provider/patients/{patient}/timeline', [RecordController::class, 'providerTimeline']);
+        Route::post('provider/patients/{patient}/documents', [DocumentController::class, 'upload']);
         Route::post('access/check', [AccessController::class, 'check']);
         Route::post('share-tokens/resolve', [AccessController::class, 'resolveToken']);
     });
+
+    Route::middleware(['auth:sanctum', 'account:patient,practitioner', 'throttle:30,1,documents'])->get('documents/{document}/download', [DocumentController::class, 'download']);
 
     Route::prefix('patient')->middleware(['auth:sanctum', 'account:patient', 'throttle:30,1,patient-self'])->group(function () {
         Route::get('consents', [ConsentController::class, 'index']);
@@ -34,6 +40,8 @@ Route::prefix('v1')->group(function () {
         Route::post('consents/{consent}/revoke', [ConsentController::class, 'revoke']);
         Route::get('access-history', [ConsentController::class, 'history']);
         Route::post('share-tokens', [AccessController::class, 'createToken']);
+        Route::get('timeline', [RecordController::class, 'patientTimeline']);
+        Route::post('records/{category}/{record}/corrections', [RecordController::class, 'requestCorrection']);
     });
 
     Route::prefix('admin')->middleware(['auth:sanctum', 'account:admin'])->group(function () {
