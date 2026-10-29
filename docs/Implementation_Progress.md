@@ -1,7 +1,7 @@
 # MediPass Implementation Progress
 
-**Updated:** 2026-10-29
-**Current phase:** Phase 4 — Authentication, patient identity, facility and provider registry (not started)
+**Updated:** 2026-10-30
+**Current phase:** Phase 4 - Authentication, patient identity, facility and provider registry (working default built; policy gaps open)
 **Current status:** Phase 0 owner signatures are still pending (drafts in `docs/approvals/` are unsigned). At the user's direction, work proceeds under the drafts' interim gate position: synthetic-data foundations, CI and baseline security only. No real patient data, patient workflows, integrations, or production deployment.
 **Repository state:** Laravel and React/Vite starter applications are present with locked dependencies. No MediPass patient workflows, partner integrations, or production configuration are implemented.
 
@@ -13,7 +13,7 @@
 | 1. Install dependencies and bootstrap development | Complete | Locked installs, local MySQL database, baseline migrations, tests, lint, frontend build, and both local HTTP endpoints verified. No patient workflows or production configuration. |
 | 2. Application foundation, environments, and CI | Complete (branch protection pending) | `/api/v1` health/readiness (verified 200 on local MySQL; 503 test when DB down), correlation IDs, consistent error envelope, API rate limit, structured JSON logging with sensitive-key redaction, staging/production env templates without secrets, CI workflow, module boundaries ([Backend_Modules.md](Backend_Modules.md)). Backend 8 tests pass; Pint clean. GitHub CI run #2 on `4ecf878` passed (backend: composer audit, Pint, tests; frontend: npm audit, lint, test, build). Run #1 failed on advisories in symfony/mime and undici; fixed by dependency updates. Remaining: enable branch protection with required CI checks (repository admin action in GitHub settings). |
 | 3. Domain model, migrations, and data quality | Complete (working default) | Schema, models and synthetic fixtures for identity, registry, consent, access grants, audit, and clinical records (encounter, condition, medication, allergy, observation, report, document, referral, corrections, integration endpoint, sync job) with provenance and correction history. 30 backend tests pass; migrate/seed/rollback verified on MySQL. Built on the unapproved draft minimum dataset; thresholds and mandatory fields still need clinical-owner policy. See [Domain_Model_Notes.md](Domain_Model_Notes.md). |
-| 4. Authentication, patient identity, facility and provider registry | Not started | |
+| 4. Authentication, patient identity, facility and provider registry | Working default built (gaps open) | Laravel Sanctum bearer tokens (60 min expiry) as a local default only; the platform draft leaves the provider open. Patient self-registration (generic response, no email enumeration; duplicates go to pending_review, never auto-linked), login with generic errors, 5-failure/15-min lockout, logout, disabled users lose access at once, staff blocked unless MFA enrolled (fail closed), admin verification of facilities/practitioners, role assignment/suspension, exact-identifier patient search (minimum-necessary result, verified practitioner and facility only, audited, rate limited). 42 backend tests pass; migrations verified on MySQL. **Not done:** TOTP/MFA enrolment, account recovery/password reset, email verification, identity-verification workflow for patients, merge/unmerge workflow and review UI, caregiver/representative access. These need MFA provider, recovery and identity-proofing policy from the security and clinical owners. |
 | 5. Authorization, consent, and audit | Not started | Must pass before exposing clinical records. |
 | 6. Clinical records, timeline, and secure document handling | Not started | |
 | 7. Patient, provider, facility, and referral workflows | Not started | |
@@ -73,7 +73,7 @@ The MySQL server and both development servers are running in local terminals. No
 ## Next actions
 
 1. Confirm CI is green for the Phase 3 clinical commit; enable branch protection on `main` (GitHub settings, admin action).
-2. Start Phase 4 (authentication provider choice is still open in the platform record; use Laravel's built-in auth with MFA hooks as a local default only if you confirm).
+2. Phase 4 follow-ups: confirm the authentication provider, MFA (TOTP) enrolment, account recovery, patient identity-proofing and merge/unmerge review workflow with the security and clinical owners, then start Phase 5 (authorization, consent, audit).
 3. Obtain clinical-owner policy for match thresholds, stale-data threshold, mandatory fields and coding systems; obtain owner signatures before any real data.
 ## Session handoff template
 

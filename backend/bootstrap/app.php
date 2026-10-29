@@ -1,6 +1,9 @@
 <?php
 
 use App\Http\Middleware\AssignCorrelationId;
+use App\Http\Middleware\EnsureAccount;
+use Illuminate\Auth\AuthenticationException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -19,6 +22,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->api(prepend: [AssignCorrelationId::class]);
         $middleware->throttleApi('120,1');
+        $middleware->alias(['account' => EnsureAccount::class]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
@@ -33,6 +37,8 @@ return Application::configure(basePath: dirname(__DIR__))
 
             $status = match (true) {
                 $e instanceof ValidationException => 422,
+                $e instanceof AuthenticationException => 401,
+                $e instanceof ModelNotFoundException => 404,
                 $e instanceof HttpExceptionInterface => $e->getStatusCode(),
                 default => 500,
             };
