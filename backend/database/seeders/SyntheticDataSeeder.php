@@ -102,6 +102,8 @@ class SyntheticDataSeeder extends Seeder
                 'correlation_id' => 'SYN-AUDIT-2',
             ]);
         }
+
+        $this->call(SyntheticClinicalSeeder::class);
     }
 
     private function facility(string $name, string $type, string $path, string $status): Facility
