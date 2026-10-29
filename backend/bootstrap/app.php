@@ -3,8 +3,10 @@
 use App\Http\Middleware\AssignCorrelationId;
 use App\Http\Middleware\AuthenticateIntegration;
 use App\Http\Middleware\EnsureAccount;
+use App\Http\Middleware\SecurityHeaders;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -22,10 +24,17 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->api(prepend: [AssignCorrelationId::class]);
+        // Global, so error responses for unmatched routes carry the headers too.
+        $middleware->append(SecurityHeaders::class);
         $middleware->throttleApi('120,1');
         $middleware->alias(['account' => EnsureAccount::class, 'integration' => AuthenticateIntegration::class]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        // A database exception message embeds the SQL and its bound values, which can hold patient data. Log the class and state only.
+        $exceptions->report(function (QueryException $e) {
+            logger()->error('database error', ['sql_state' => $e->getCode(), 'exception' => $e::class]);
+        })->stop();
+
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
