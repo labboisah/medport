@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import type { Timeline, TimelineItem } from './api'
 
 const originLabel: Record<TimelineItem['origin'], string> = {
@@ -15,7 +16,7 @@ const verificationLabel: Record<string, string> = {
 
 const format = (value: string) => new Date(value).toLocaleDateString()
 
-export function TimelineView({ timeline }: { timeline: Timeline }) {
+export function TimelineView({ timeline, actions }: { timeline: Timeline; actions?: (item: TimelineItem) => ReactNode }) {
   return (
     <section aria-label="Record timeline">
       <p role="note" className="rounded border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
@@ -28,7 +29,7 @@ export function TimelineView({ timeline }: { timeline: Timeline }) {
           {timeline.data.map((item) => (
             <li key={item.id} className="rounded border border-slate-300 bg-white p-4">
               <h3 className="font-semibold">
-                {item.local_display ?? String(item.reason ?? item.type).replace(/_/g, ' ')}
+                {item.local_display ?? String(item.title ?? item.reason ?? item.type).replace(/_/g, ' ')}
                 <span className="ml-2 text-sm font-normal text-slate-600">({item.category.replace(/_/g, ' ')})</span>
               </h3>
               <dl className="mt-2 grid grid-cols-1 gap-x-6 gap-y-1 text-sm sm:grid-cols-2">
@@ -36,10 +37,12 @@ export function TimelineView({ timeline }: { timeline: Timeline }) {
                 <div><dt className="inline font-medium">Origin: </dt><dd className="inline">{originLabel[item.origin]}</dd></div>
                 <div><dt className="inline font-medium">Clinical date: </dt><dd className="inline">{format(item.clinical_date)}</dd></div>
                 <div><dt className="inline font-medium">Received: </dt><dd className="inline">{format(item.ingested_at)}</dd></div>
+                {item.outcome_text ? <div className="sm:col-span-2"><dt className="inline font-medium">Outcome: </dt><dd className="inline">{String(item.outcome_text)}</dd></div> : null}
                 <div><dt className="inline font-medium">Verification: </dt><dd className="inline">{verificationLabel[item.verification_status] ?? item.verification_status}</dd></div>
               </dl>
               {item.stale && <p className="mt-2 text-sm font-medium text-amber-800">Older than {timeline.meta.stale_after_days} days. It may be out of date.</p>}
               {item.correction_open && <p className="mt-2 text-sm font-medium text-red-800">The patient has disputed this record. A review is open.</p>}
+              {actions?.(item)}
             </li>
           ))}
         </ul>

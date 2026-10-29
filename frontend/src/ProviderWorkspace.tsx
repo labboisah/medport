@@ -1,6 +1,10 @@
 import { useState, type FormEvent } from 'react'
 import { api, type Timeline } from './api'
 import { TimelineView } from './Timeline'
+import { EncounterForm, IncomingReferrals, ReferralForm, UploadForm } from './FacilityTools'
+import { DownloadButton } from './RecordActions'
+import { OfflineBanner, Section } from './ui'
+import { useOnline } from './hooks'
 
 type Match = { id: string; given_name: string; family_name: string; birth_year: string | null; identity_verification: string }
 
@@ -16,6 +20,7 @@ export function ProviderWorkspace() {
   const [reason, setReason] = useState('')
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const online = useOnline()
 
   const run = async (fn: () => Promise<void>) => {
     setError(null)
@@ -52,6 +57,7 @@ export function ProviderWorkspace() {
   return (
     <div className="space-y-8">
       <p className="rounded border border-slate-300 bg-white p-3 text-sm">Purpose of access: <strong>direct care</strong>. Every view is recorded in the patient’s access history.</p>
+      <OfflineBanner online={online} lastLoaded={null} />
       {error && <p role="alert" className="rounded bg-red-50 p-3 text-red-900">{error}</p>}
       {message && <p role="status" className="rounded bg-emerald-50 p-3 text-emerald-900">{message}</p>}
 
@@ -86,7 +92,17 @@ export function ProviderWorkspace() {
         </section>
       )}
 
-      {timeline && <TimelineView timeline={timeline} />}
+      {match && (
+        <>
+          <Section id="enc-h" title="Record a visit manually"><EncounterForm patientId={match.id} /></Section>
+          <Section id="ref-h" title="Refer this patient"><ReferralForm patientId={match.id} /></Section>
+          <Section id="doc-h" title="Upload a document"><UploadForm patientId={match.id} /></Section>
+        </>
+      )}
+
+      {timeline && <TimelineView timeline={timeline} actions={(item) => <DownloadButton item={item} />} />}
+
+      <IncomingReferrals />
     </div>
   )
 }

@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\AdminController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\ConsentController;
 use App\Http\Controllers\Api\V1\DocumentController;
+use App\Http\Controllers\Api\V1\FacilityDirectoryController;
 use App\Http\Controllers\Api\V1\HealthController;
 use App\Http\Controllers\Api\V1\ManualEntryController;
 use App\Http\Controllers\Api\V1\PatientSearchController;
@@ -42,6 +43,8 @@ Route::prefix('v1')->group(function () {
     });
 
     Route::middleware(['auth:sanctum', 'account:patient,practitioner', 'throttle:30,1,documents'])->get('documents/{document}/download', [DocumentController::class, 'download']);
+
+    Route::middleware(['auth:sanctum', 'account:patient,practitioner', 'throttle:30,1,directory'])->get('facilities', [FacilityDirectoryController::class, 'index']);
 
     Route::prefix('patient')->middleware(['auth:sanctum', 'account:patient', 'throttle:30,1,patient-self'])->group(function () {
         Route::get('consents', [ConsentController::class, 'index']);

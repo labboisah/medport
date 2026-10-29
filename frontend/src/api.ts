@@ -18,6 +18,8 @@ export type Timeline = {
   meta: { complete: boolean; note: string; sources: string[]; stale_after_days: number }
 }
 
+export type Facility = { id: string; name: string }
+
 export class ApiError extends Error {
   status: number
   constructor(status: number, message: string) {
@@ -34,14 +36,15 @@ export const setToken = (value: string | null) => {
 }
 
 export async function api<T = unknown>(path: string, init: { method?: string; body?: unknown } = {}): Promise<T> {
+  const form = init.body instanceof FormData
   const response = await fetch(`/api/v1${path}`, {
     method: init.method ?? (init.body ? 'POST' : 'GET'),
     headers: {
       Accept: 'application/json',
-      ...(init.body ? { 'Content-Type': 'application/json' } : {}),
+      ...(init.body && !form ? { 'Content-Type': 'application/json' } : {}),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
-    body: init.body ? JSON.stringify(init.body) : undefined,
+    body: init.body ? (form ? (init.body as FormData) : JSON.stringify(init.body)) : undefined,
   }).catch(() => {
     throw new ApiError(0, 'Cannot reach the server. Check your connection and try again.')
   })
@@ -59,4 +62,22 @@ function friendlyMessage(status: number, serverMessage?: string): string {
   if (status === 429) return 'Too many attempts. Please wait a moment and try again.'
   if (status >= 500) return 'Something went wrong on our side. Please try again.'
   return serverMessage ?? 'The request could not be completed.'
+}
+
+/** Fetches a protected file with the in-memory token and hands it to the browser as a download. */
+export async function downloadDocument(id: string, filename: string): Promise<void> {
+  const response = await fetch(`/api/v1/documents/${id}/download`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  }).catch(() => {
+    throw new ApiError(0, 'Cannot reach the server. Check your connection and try again.')
+  })
+  if (!response.ok) {
+    throw new ApiError(response.status, friendlyMessage(response.status))
+  }
+  const url = URL.createObjectURL(await response.blob())
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename
+  link.click()
+  URL.revokeObjectURL(url)
 }

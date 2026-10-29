@@ -32,12 +32,13 @@ export default function App() {
 
   return (
     <div className="mx-auto max-w-3xl p-4">
+      <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:bg-white focus:p-2">Skip to main content</a>
       <header className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold">MediPass</h1>
         {session && <button className="rounded border border-slate-500 px-3 py-1" onClick={signOut}>Sign out</button>}
       </header>
       <p className="mb-4 rounded border border-amber-300 bg-amber-50 p-2 text-sm text-amber-900">Pre-release build. Synthetic test data only.</p>
-      <main>
+      <main id="main" tabIndex={-1}>
         {!session && (
           <form onSubmit={signIn} className="space-y-3" aria-label="Sign in">
             <h2 className="text-xl font-semibold">Sign in</h2>

@@ -222,4 +222,15 @@ class WorkflowTest extends TestCase
         $this->withToken($pt)->getJson('/api/v1/provider/referrals/incoming')->assertStatus(403);
         $this->request($pt)->assertStatus(403);
     }
+
+    public function test_facility_directory_lists_only_verified_facilities_with_minimal_fields(): void
+    {
+        Facility::create(['name' => 'Verified Clinic', 'type' => 'clinic', 'verification_status' => 'verified']);
+        Facility::create(['name' => 'Pending Clinic', 'type' => 'clinic', 'verification_status' => 'pending']);
+
+        $this->getJson('/api/v1/facilities')->assertStatus(401);
+        $res = $this->withToken($this->token($this->patientUser))->getJson('/api/v1/facilities')->assertOk();
+        $this->assertSame(['Verified Clinic'], collect($res->json('data'))->pluck('name')->all());
+        $this->assertSame(['id', 'name'], array_keys($res->json('data.0')));
+    }
 }
