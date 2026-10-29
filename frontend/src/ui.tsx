@@ -64,3 +64,15 @@ export function Badge({ tone = 'neutral', children }: { tone?: keyof typeof TONE
 export function Panel({ children }: { children: ReactNode }) {
   return <div className="card space-y-3 p-5">{children}</div>
 }
+export function Spinner() {
+  return <span aria-hidden="true" className="spinner" />
+}
+
+/** Announced loading state for a whole view. */
+export function PageLoader({ text }: { text: string }) {
+  return (
+    <div role="status" className="card flex items-center justify-center gap-3 p-10 text-slate-700">
+      <Spinner />{text}
+    </div>
+  )
+}

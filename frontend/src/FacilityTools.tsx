@@ -50,7 +50,7 @@ export function EncounterForm({ patientId }: { patientId: string }) {
         <input className={inputClass} value={reason} onChange={(e) => setReason(e.target.value)} required maxLength={255} />
       </label>
       <div className="flex flex-wrap gap-3">
-        <button className={primaryButton} disabled={busy}>Save visit</button>
+        <button className={primaryButton} aria-busy={busy} disabled={busy}>Save visit</button>
         {duplicate && <button type="button" className={secondaryButton} disabled={busy} onClick={() => void save(true)}>Save anyway, it is a different visit</button>}
       </div>
     </form>
@@ -85,7 +85,7 @@ export function ReferralForm({ patientId }: { patientId: string }) {
       <label className="block">Reason for the referral
         <textarea className={inputClass} value={reason} onChange={(e) => setReason(e.target.value)} required minLength={5} maxLength={255} />
       </label>
-      <button className={primaryButton} disabled={busy || !to}>Send referral</button>
+      <button className={primaryButton} aria-busy={busy} disabled={busy || !to}>Send referral</button>
     </form>
   )
 }
@@ -125,7 +125,7 @@ export function UploadForm({ patientId }: { patientId: string }) {
       <label className="block">File
         <input type="file" accept="application/pdf,image/png,image/jpeg" className={inputClass} onChange={(e) => setFile(e.target.files?.[0] ?? null)} aria-required="true" />
       </label>
-      <button className={primaryButton} disabled={busy || !file}>Upload</button>
+      <button className={primaryButton} aria-busy={busy} disabled={busy || !file}>Upload</button>
     </form>
   )
 }
@@ -137,6 +137,7 @@ const tone = (s: string) => (s === 'completed' || s === 'accepted' ? 'good' : s 
 export function IncomingReferrals() {
   const online = useOnline()
   const [rows, setRows] = useState<Incoming[]>([])
+  const [loaded, setLoaded] = useState(false)
   const [outcomes, setOutcomes] = useState<Record<string, string>>({})
   const [loadError, setLoadError] = useState<string | null>(null)
   const act = useAction()
@@ -145,8 +146,10 @@ export function IncomingReferrals() {
     try {
       setRows((await api<{ data: Incoming[] }>('/provider/referrals/incoming')).data)
       setLoadError(null)
+      setLoaded(true)
     } catch (e) {
       setLoadError((e as Error).message)
+      setLoaded(true)
     }
   }, [])
 
@@ -180,7 +183,7 @@ export function IncomingReferrals() {
     <div className="space-y-3">
       {loadError && <p role="alert" className="rounded-lg border border-red-300 bg-red-50 p-3 text-red-900">{loadError}</p>}
       <Messages error={act.error} message={act.message} />
-      <DataTable caption="Incoming referrals" rows={rows} rowKey={(r) => r.id} columns={columns}
+      <DataTable caption="Incoming referrals" loading={!loaded} rows={rows} rowKey={(r) => r.id} columns={columns}
         searchText={(r) => `${r.patient.given_name} ${r.patient.family_name} ${r.from_facility ?? ''} ${r.reason}`}
         filters={[
           { id: 'status', label: 'Status', options: optionsFrom(rows, (r) => r.status, label), test: (r, v) => r.status === v },

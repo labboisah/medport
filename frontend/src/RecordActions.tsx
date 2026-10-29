@@ -51,7 +51,7 @@ export function CorrectionForm({ item, onDone }: { item: TimelineItem; onDone: (
             <textarea className={inputClass} value={reason} onChange={(e) => setReason(e.target.value)} required minLength={5} />
           </label>
           <div className="flex gap-3">
-            <button className={primaryButton} disabled={busy}>Send</button>
+            <button className={primaryButton} aria-busy={busy} disabled={busy}>Send</button>
             <button type="button" className={secondaryButton} onClick={() => setOpen(false)}>Cancel</button>
           </div>
         </form>

@@ -62,4 +62,22 @@ describe('DataTable', () => {
     expect(details).toHaveAttribute('aria-expanded', 'true')
     expect(screen.getByText('More about Item 12')).toBeInTheDocument()
   })
+
+  it('jumps to a page number and shows removable filter chips', async () => {
+    table()
+    await userEvent.click(screen.getByRole('button', { name: 'Page 3' }))
+    expect(screen.getByRole('button', { name: 'Page 3' })).toHaveAttribute('aria-current', 'page')
+
+    await userEvent.selectOptions(screen.getByLabelText('Kind'), 'alpha')
+    const chips = screen.getByRole('list', { name: 'Active filters' })
+    expect(within(chips).getByText('Kind: alpha')).toBeInTheDocument()
+    await userEvent.click(within(chips).getByRole('button', { name: 'Remove filter Kind: alpha' }))
+    expect(screen.queryByRole('list', { name: 'Active filters' })).not.toBeInTheDocument()
+  })
+
+  it('shows a loading state instead of the empty message', () => {
+    render(<DataTable caption="Items" loading rows={[]} rowKey={(r: Row) => r.id} empty="Nothing here." columns={[{ key: 'name', header: 'Name', cell: (r: Row) => r.name }]} />)
+    expect(screen.getByText('Loading…')).toBeInTheDocument()
+    expect(screen.queryByText('Nothing here.')).not.toBeInTheDocument()
+  })
 })

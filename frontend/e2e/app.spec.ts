@@ -81,3 +81,28 @@ test('provider workspace passes the audit with the facility forms open', async (
   await expect(page.getByRole('form', { name: 'Record a visit' })).toBeVisible()
   expect((await audit(page)).violations).toEqual([])
 })
+
+test('desktop sidebar collapses to icons and keeps working, passing the audit', async ({ page }) => {
+  await stubApi(page, 'patient')
+  await signIn(page)
+  await page.getByRole('button', { name: 'Collapse sidebar' }).click()
+  await expect(page.getByRole('button', { name: 'Expand sidebar' })).toHaveAttribute('aria-expanded', 'false')
+  await page.getByRole('link', { name: 'Sharing' }).click()
+  await expect(page.getByRole('heading', { name: 'Sharing', level: 1 })).toBeVisible()
+  expect((await audit(page)).violations).toEqual([])
+})
+
+test('on a phone the menu opens as a drawer, closes on navigation and Escape, and passes the audit', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 780 })
+  await stubApi(page, 'patient')
+  await signIn(page)
+  await expect(page.getByRole('link', { name: 'My records' })).toBeHidden()
+  await page.getByRole('button', { name: 'Open menu' }).click()
+  expect((await audit(page)).violations).toEqual([])
+  await page.getByRole('link', { name: 'My records' }).click()
+  await expect(page.getByRole('heading', { name: 'My records', level: 1 })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'My records' })).toBeHidden()
+  await page.getByRole('button', { name: 'Open menu' }).click()
+  await page.keyboard.press('Escape')
+  await expect(page.getByRole('link', { name: 'My records' })).toBeHidden()
+})

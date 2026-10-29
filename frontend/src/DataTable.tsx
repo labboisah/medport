@@ -24,12 +24,13 @@ type Props<T> = {
   filters?: Filter<T>[]
   pageSizes?: number[]
   empty: string
+  loading?: boolean
   detail?: (row: T) => ReactNode
   defaultSort?: { key: string; dir: 'asc' | 'desc' }
 }
 
 /** Searchable, filterable, sortable, paginated table. Everything is client-side over the rows the API already returned. */
-export function DataTable<T>({ caption, rows, rowKey, columns, searchText, filters = [], pageSizes = [5, 10, 25], empty, detail, defaultSort }: Props<T>) {
+export function DataTable<T>({ caption, rows, rowKey, columns, searchText, filters = [], pageSizes = [5, 10, 25], empty, loading = false, detail, defaultSort }: Props<T>) {
   const id = useId()
   const [query, setQuery] = useState('')
   const [chosen, setChosen] = useState<Record<string, string>>({})
@@ -61,6 +62,9 @@ export function DataTable<T>({ caption, rows, rowKey, columns, searchText, filte
   const active = Object.values(chosen).filter(Boolean).length + (query ? 1 : 0)
 
   const reset = () => setPage(1)
+  const clearAll = () => { setQuery(''); setChosen({}); reset() }
+  const chips = [...(query ? [{ id: '_q', text: `Search: ${query}`, clear: () => setQuery('') }] : []),
+    ...filters.filter((f) => chosen[f.id]).map((f) => ({ id: f.id, text: `${f.label}: ${f.options.find((o) => o.value === chosen[f.id])?.label ?? chosen[f.id]}`, clear: () => setChosen({ ...chosen, [f.id]: '' }) }))]
   const toggleSort = (key: string) => {
     setSort(sort?.key === key ? { key, dir: sort.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: 'asc' })
     reset()
@@ -82,10 +86,17 @@ export function DataTable<T>({ caption, rows, rowKey, columns, searchText, filte
             </select>
           </label>
         ))}
-        {active > 0 && <button className="btn-secondary btn-sm" onClick={() => { setQuery(''); setChosen({}); reset() }}>Clear filters</button>}
+        {active > 0 && <button className="btn-secondary btn-sm" onClick={clearAll}>Clear filters</button>}
       </div>
+      {chips.length > 0 && (
+        <ul aria-label="Active filters" className="flex flex-wrap gap-2 border-b border-slate-200 bg-slate-50 px-4 py-2">
+          {chips.map((c) => (
+            <li key={c.id}><span className="badge-info gap-1">{c.text}<button className="rounded-full px-1 hover:bg-sky-200" aria-label={`Remove filter ${c.text}`} onClick={() => { c.clear(); reset() }}>×</button></span></li>
+          ))}
+        </ul>
+      )}
 
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto" aria-busy={loading}>
         <table className="w-full text-left text-sm">
           <caption className="sr-only">{caption}</caption>
           <thead className="bg-slate-50 text-slate-700">
@@ -104,10 +115,22 @@ export function DataTable<T>({ caption, rows, rowKey, columns, searchText, filte
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200">
-            {shown.length === 0 && (
-              <tr><td colSpan={columns.length + (detail ? 1 : 0)} className="px-4 py-8 text-center text-slate-700">{active > 0 ? 'Nothing matches your search or filters.' : empty}</td></tr>
+            {loading && [0, 1, 2].map((i) => (
+              <tr key={i} aria-hidden="true">
+                {Array.from({ length: columns.length + (detail ? 1 : 0) }, (_, j) => <td key={j} className="px-4 py-4"><span className="skeleton block h-4 w-full max-w-40" /></td>)}
+              </tr>
+            ))}
+            {!loading && shown.length === 0 && (
+              <tr><td colSpan={columns.length + (detail ? 1 : 0)} className="px-4 py-10 text-center text-slate-700">
+                {active > 0 ? (
+                  <>
+                    <p className="font-medium text-slate-900">Nothing matches your search or filters.</p>
+                    <button className="btn-secondary btn-sm mt-3" onClick={clearAll}>Show all rows</button>
+                  </>
+                ) : empty}
+              </td></tr>
             )}
-            {shown.map((row) => {
+            {!loading && shown.map((row) => {
               const key = rowKey(row)
               const expanded = open === key
               return (
@@ -134,7 +157,7 @@ export function DataTable<T>({ caption, rows, rowKey, columns, searchText, filte
 
       <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 p-4 text-sm">
         <p aria-live="polite">
-          {visible.length === 0 ? 'No results' : `Showing ${start + 1}–${start + shown.length} of ${visible.length}`}
+          {loading ? 'Loading…' : visible.length === 0 ? 'No results' : `Showing ${start + 1}–${start + shown.length} of ${visible.length}`}
           {visible.length !== rows.length && ` (filtered from ${rows.length})`}
         </p>
         <div className="flex flex-wrap items-center gap-3">
@@ -143,13 +166,29 @@ export function DataTable<T>({ caption, rows, rowKey, columns, searchText, filte
               {pageSizes.map((n) => <option key={n} value={n}>{n}</option>)}
             </select>
           </label>
-          <nav aria-label={`${caption} pages`} className="flex items-center gap-2">
+          <nav aria-label={`${caption} pages`} className="flex flex-wrap items-center gap-1">
             <button className="btn-secondary btn-sm" disabled={current <= 1} onClick={() => setPage(current - 1)}>Previous</button>
-            <span>Page {current} of {pages}</span>
+            {pageList(current, pages).map((p, i) => p === '…'
+              ? <span key={`gap-${i}`} aria-hidden="true" className="px-1">…</span>
+              : <button key={p} className={current === p ? 'btn-primary btn-sm' : 'btn-secondary btn-sm'} aria-current={current === p ? 'page' : undefined} aria-label={`Page ${p}`} onClick={() => setPage(p)}>{p}</button>)}
+            <span className="sr-only">Page {current} of {pages}</span>
             <button className="btn-secondary btn-sm" disabled={current >= pages} onClick={() => setPage(current + 1)}>Next</button>
           </nav>
         </div>
       </div>
     </div>
   )
+}
+
+/** Page numbers with gaps, e.g. 1 … 4 5 6 … 12. */
+function pageList(current: number, total: number): (number | '…')[] {
+  const keep = new Set([1, total, current - 1, current, current + 1].filter((n) => n >= 1 && n <= total))
+  const out: (number | '…')[] = []
+  let prev = 0
+  for (const n of [...keep].sort((a, b) => a - b)) {
+    if (n - prev > 1) out.push('…')
+    out.push(n)
+    prev = n
+  }
+  return out
 }

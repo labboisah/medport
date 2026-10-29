@@ -4,7 +4,7 @@ import { DataTable, type Column } from './DataTable'
 import { label, primaryButton, useAction, useFacilities, useOnline, useView, optionsFrom } from './hooks'
 import { CorrectionForm, DownloadButton } from './RecordActions'
 import { RecordsTable } from './Timeline'
-import { Badge, CategoryPicker, Messages, OfflineBanner, Panel, Stat } from './ui'
+import { Badge, CategoryPicker, Messages, OfflineBanner, PageLoader, Panel, Stat } from './ui'
 
 type AccessRequest = { id: string; facility: string; requested_by: string | null; categories: string[]; reason: string; requested_hours: number; status: string }
 type ConsentRow = { id: string; facility: string; categories: string[]; status: string; granted_at: string; expires_at: string }
@@ -178,7 +178,7 @@ export function PatientWallet() {
               {!item.correction_open && <CorrectionForm item={item} onDone={() => void load()} />}
             </>
           )} />
-        ) : <p>Loading your records…</p>
+        ) : <PageLoader text="Loading your records…" />
       )}
 
       {view === 'sharing' && (
@@ -196,12 +196,12 @@ export function PatientWallet() {
               <label className="block max-w-xs font-medium">For how many hours
                 <input type="number" min={1} max={720} className="input" value={hours} onChange={(e) => setHours(Number(e.target.value))} required />
               </label>
-              <button className={primaryButton} disabled={!online || act.busy || categories.length === 0 || !facilityId}>Start sharing</button>
+              <button className={primaryButton} aria-busy={act.busy} disabled={!online || act.busy || categories.length === 0 || !facilityId}>Start sharing</button>
             </form>
           </Panel>
           <section aria-labelledby="sharing-h" className="space-y-3">
             <h2 id="sharing-h" className="text-lg font-semibold">Who can see your records</h2>
-            <DataTable caption="Sharing" rows={consents} rowKey={(c) => c.id} columns={consentColumns}
+            <DataTable caption="Sharing" loading={!lastLoaded && !loadError} rows={consents} rowKey={(c) => c.id} columns={consentColumns}
               searchText={(c) => `${c.facility} ${c.categories.join(' ')} ${c.status}`}
               filters={[
                 { id: 'status', label: 'Status', options: optionsFrom(consents, (c) => c.status, cap), test: (c, v) => c.status === v },
@@ -214,7 +214,7 @@ export function PatientWallet() {
       )}
 
       {view === 'history' && (
-        <DataTable caption="Access history" rows={history} rowKey={(h) => `${h.occurred_at}-${h.facility}-${h.action}-${h.outcome}-${h.resource_type}-${history.indexOf(h)}`} columns={historyColumns}
+        <DataTable caption="Access history" loading={!lastLoaded && !loadError} rows={history} rowKey={(h) => `${h.occurred_at}-${h.facility}-${h.action}-${h.outcome}-${h.resource_type}-${history.indexOf(h)}`} columns={historyColumns}
           searchText={(h) => `${h.facility ?? ''} ${h.action} ${h.resource_type} ${h.outcome}`}
           filters={[
             { id: 'result', label: 'Result', options: [{ value: 'allowed', label: 'Allowed' }, { value: 'denied', label: 'Not allowed' }], test: (h, v) => (v === 'allowed') === (h.outcome === 'success') },

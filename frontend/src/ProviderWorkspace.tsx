@@ -95,14 +95,17 @@ function FindPatient() {
 
 function MyRequests() {
   const [rows, setRows] = useState<MyRequest[]>([])
+  const [loaded, setLoaded] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     try {
       setRows((await api<{ data: MyRequest[] }>('/provider/access-requests')).data)
       setError(null)
+      setLoaded(true)
     } catch (e) {
       setError((e as Error).message)
+      setLoaded(true)
     }
   }, [])
 
@@ -122,7 +125,7 @@ function MyRequests() {
   return (
     <div className="space-y-3">
       {error && <p role="alert" className="rounded-lg border border-red-300 bg-red-50 p-3 text-red-900">{error}</p>}
-      <DataTable caption="Access requests" rows={rows} rowKey={(r) => r.id} columns={columns}
+      <DataTable caption="Access requests" loading={!loaded} rows={rows} rowKey={(r) => r.id} columns={columns}
         searchText={(r) => `${r.categories.join(' ')} ${r.reason} ${r.status}`}
         filters={[{ id: 'status', label: 'Status', options: optionsFrom(rows, (r) => r.status, label), test: (r, v) => r.status === v }]}
         defaultSort={{ key: 'expires', dir: 'desc' }}
